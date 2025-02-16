@@ -1,64 +1,34 @@
-from langdetect import detect
-from typing import List, Dict
 import pytesseract
-from bidi.algorithm import get_display
-import arabic_reshaper
-import re
+from .language_check import LanguageChecker
 
-# Language mapping for Tesseract
-LANGUAGE_MAPPING = {
-    'ar': 'ara',    # Arabic
-    'he': 'heb',    # Hebrew
-    'fa': 'fas',    # Persian/Farsi
-    'ur': 'urd',    # Urdu
-    'en': 'eng',    # English
-}
+# Initialize language checker
+lang_checker = LanguageChecker()
 
-# RTL languages
-RTL_LANGUAGES = {'ar', 'he', 'fa', 'ur'}
-
-def detect_language(text: str) -> str:
-    """Detect the primary language of the text."""
-    try:
-        return detect(text)
-    except:
-        return 'en'  # Default to English if detection fails
-
-def is_rtl_language(lang_code: str) -> bool:
-    """Check if the language is RTL."""
-    return lang_code in RTL_LANGUAGES
-
-def get_tesseract_lang_string(detected_lang: str) -> str:
-    """Convert detected language code to Tesseract language code."""
-    return LANGUAGE_MAPPING.get(detected_lang, 'eng')
-
-def process_rtl_text(text: str, lang_code: str) -> str:
-    """Process RTL text appropriately."""
-    if is_rtl_language(lang_code):
-        # Reshape Arabic text
-        if lang_code == 'ar':
-            text = arabic_reshaper.reshape(text)
-        # Apply RTL algorithm
-        text = get_display(text)
-    return text
-
-def ocr_with_language_support(image_path: str) -> Dict[str, str]:
-    """Perform OCR with language detection and appropriate processing."""
-    # Try OCR with multiple languages
+def ocr_with_language_support(image_path: str) -> dict:
+    """
+    Perform OCR with language detection and support for multiple languages.
+    """
+    # First try with all supported languages
     text = pytesseract.image_to_string(
         image_path,
-        lang='+'.join(LANGUAGE_MAPPING.values()),
+        lang='+'.join(['eng', 'ara', 'heb', 'fas', 'urd']),
         config='--psm 3'
     )
     
-    # Detect the primary language
-    lang_code = detect_language(text)
-    
-    # Process text according to detected language
-    processed_text = process_rtl_text(text, lang_code)
+    # Analyze the text for language
+    if text.strip():
+        analysis = lang_checker.analyze_text(text)
+        dominant_lang = analysis['dominant_language']
+        
+        # If confident about language, retry OCR with specific language
+        if analysis.get('confidence', 0) > 0.5:
+            text = pytesseract.image_to_string(
+                image_path,
+                lang=dominant_lang,
+                config='--psm 3'
+            )
     
     return {
-        'text': processed_text,
-        'detected_language': lang_code,
-        'language_name': LANGUAGE_MAPPING.get(lang_code, 'Unknown')
+        'text': text,
+        'language_analysis': analysis if text.strip() else None
     }
