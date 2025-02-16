@@ -4,18 +4,141 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF OCR Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label {
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="file"] {
+            padding: 10px;
+            border: 2px dashed #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+        }
+        .submit-btn {
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        #uploadStatus {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .file-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .error {
+            background-color: #ffe6e6;
+            color: #dc3545;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <h1>Upload PDF for OCR</h1>
-    <form action="/uploader" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required><br><br>
-        <label for="format">Choose output format:</label>
-        <select name="format" id="format" required>
-            <option value="txt">TXT</option>
-            <option value="pdf">PDF</option>
-            <option value="json">JSON</option>
-        </select><br><br>
-        <input type="submit" value="Upload and Process">
-    </form>
+    <div class="container">
+        <h1>PDF OCR Tool</h1>
+        <form id="uploadForm" action="/uploader" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file">Select PDF File:</label>
+                <input type="file" name="file" id="file" accept=".pdf" required>
+                <div class="file-info" id="fileInfo"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="format">Output Format:</label>
+                <select name="format" id="format" required>
+                    <option value="txt">Text File (.txt)</option>
+                    <option value="json">JSON Format (.json)</option>
+                </select>
+            </div>
+
+            <div class="error" id="errorMessage"></div>
+            
+            <button type="submit" class="submit-btn">Process PDF</button>
+        </form>
+        
+        <div id="uploadStatus"></div>
+    </div>
+
+    <script>
+        document.getElementById('file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const fileInfo = document.getElementById('fileInfo');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            if (file) {
+                if (file.type !== 'application/pdf') {
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = 'Please select a PDF file.';
+                    e.target.value = '';
+                    fileInfo.textContent = '';
+                } else {
+                    errorMessage.style.display = 'none';
+                    fileInfo.textContent = `File: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                }
+            }
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            const submitButton = this.querySelector('.submit-btn');
+            const uploadStatus = document.getElementById('uploadStatus');
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+            
+            uploadStatus.style.display = 'block';
+            uploadStatus.style.backgroundColor = '#e8f5e9';
+            uploadStatus.textContent = 'Processing PDF file...';
+        });
+    </script>
 </body>
 </html>
