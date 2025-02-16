@@ -31,7 +31,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     hunspell-en-us \
     hunspell-ar \
     libhunspell-dev \
+    python3-dev \
     build-essential \
+    pkg-config \
     tesseract-ocr \
     tesseract-ocr-ara \
     tesseract-ocr-heb \
@@ -41,10 +43,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr-ara-ext \
     fonts-arabeyes \
     fonts-hosny-amiri \
-    # Add security packages
     ca-certificates \
-    # Add optimization packages
-    python3-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -62,8 +61,10 @@ RUN mkdir -p input output logs \
 COPY --chown=appuser:appuser requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir gunicorn
+RUN pip install --no-cache-dir -U pip setuptools wheel && \
+    pip install --no-cache-dir cython && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir gunicorn
 
 # Copy application code
 COPY --chown=appuser:appuser . .
