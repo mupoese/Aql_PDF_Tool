@@ -43,18 +43,24 @@ jobs:
           tesseract-ocr-urd \
           tesseract-ocr-eng \
           python3-dev \
-          python3-devel \
-          python${{ matrix.python-version }}-dev \
           build-essential \
           pkg-config
 
+    - name: Set up build environment
+      run: |
+        # Get Python include directory
+        PYTHON_INCLUDE=$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')
+        echo "PYTHON_INCLUDE=$PYTHON_INCLUDE" >> $GITHUB_ENV
+        # Set compiler flags
+        echo "CFLAGS=-I$PYTHON_INCLUDE" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$PYTHON_INCLUDE" >> $GITHUB_ENV
+
     - name: Install Python dependencies
       run: |
-        export CFLAGS="-I$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')"
         python -m pip install --upgrade pip setuptools wheel
-        python -m pip install cython==3.0.12
-        # Install cyhunspell separately first
-        python -m pip install --no-binary :all: cyhunspell==1.3.4
+        python -m pip install "cython>=3.0.0,<3.1.0"
+        # Force rebuild of cyhunspell from source
+        CFLAGS="-I$PYTHON_INCLUDE" CPPFLAGS="-I$PYTHON_INCLUDE" python -m pip install --no-binary cyhunspell cyhunspell==1.3.4
         python -m pip install -r requirements.txt
         python -m pip install pytest pytest-cov pylint black mypy
 
@@ -88,7 +94,6 @@ jobs:
           hunspell-ar \
           libhunspell-dev \
           python3-dev \
-          python3-devel \
           build-essential \
           pkg-config
 
@@ -97,13 +102,18 @@ jobs:
       with:
         python-version: '3.11'
 
+    - name: Set up build environment
+      run: |
+        PYTHON_INCLUDE=$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')
+        echo "PYTHON_INCLUDE=$PYTHON_INCLUDE" >> $GITHUB_ENV
+        echo "CFLAGS=-I$PYTHON_INCLUDE" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$PYTHON_INCLUDE" >> $GITHUB_ENV
+
     - name: Install Python dependencies
       run: |
-        export CFLAGS="-I$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')"
         python -m pip install --upgrade pip setuptools wheel
-        python -m pip install cython==3.0.12
-        # Install cyhunspell separately first
-        python -m pip install --no-binary :all: cyhunspell==1.3.4
+        python -m pip install "cython>=3.0.0,<3.1.0"
+        CFLAGS="-I$PYTHON_INCLUDE" CPPFLAGS="-I$PYTHON_INCLUDE" python -m pip install --no-binary cyhunspell cyhunspell==1.3.4
         python -m pip install -r requirements.txt
 
     # ... rest of the security job remains the same ...
