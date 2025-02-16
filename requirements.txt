@@ -9,5 +9,3 @@ langdetect
 pdfplumber
 
 hunspell
-
-pyhunspell
