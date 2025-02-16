@@ -1,31 +1,36 @@
 name: OCR Tool CI/CD
 on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4  # Updated to latest version
+      
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5  # Updated to latest version
         with:
-          python-version: 3.11
+          python-version: '3.11'
+          cache: 'pip'  # Enable pip caching
+      
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y hunspell hunspell-en-us libhunspell-dev
-          # Verify hunspell installation
-          hunspell -v
-          # Show installed library location
-          ldconfig -p | grep hunspell
-      - name: Install dependencies
+          sudo apt-get install -y hunspell hunspell-en-us libhunspell-dev tesseract-ocr
+      
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Lint and Test
+      
+      - name: Run tests
         run: |
           python -m unittest discover
+      
       - name: Build Docker image
         run: |
           docker build -t ocr_pdf_tool .
-      - name: Push Docker image (optioneel)
-        run: echo "Add Docker Hub credentials here"
+        
+      - name: Test Docker image
+        run: |
+          docker run --rm ocr_pdf_tool python -c "import flask; import pytesseract; import pymupdf; import langdetect; import pdfplumber; import hunspell; print('All dependencies successfully imported')"
