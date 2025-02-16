@@ -43,15 +43,18 @@ jobs:
           tesseract-ocr-urd \
           tesseract-ocr-eng \
           python3-dev \
+          python3-devel \
+          python${{ matrix.python-version }}-dev \
           build-essential \
           pkg-config
 
     - name: Install Python dependencies
       run: |
+        export CFLAGS="-I$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')"
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install cython==3.0.12
         # Install cyhunspell separately first
-        python -m pip install cyhunspell==1.3.4
+        python -m pip install --no-binary :all: cyhunspell==1.3.4
         python -m pip install -r requirements.txt
         python -m pip install pytest pytest-cov pylint black mypy
 
@@ -85,6 +88,7 @@ jobs:
           hunspell-ar \
           libhunspell-dev \
           python3-dev \
+          python3-devel \
           build-essential \
           pkg-config
 
@@ -95,10 +99,11 @@ jobs:
 
     - name: Install Python dependencies
       run: |
+        export CFLAGS="-I$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')"
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install cython==3.0.12
         # Install cyhunspell separately first
-        python -m pip install cyhunspell==1.3.4
+        python -m pip install --no-binary :all: cyhunspell==1.3.4
         python -m pip install -r requirements.txt
 
     # ... rest of the security job remains the same ...
