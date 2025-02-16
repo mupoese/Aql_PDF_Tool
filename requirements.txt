@@ -4,3 +4,5 @@ pymupdf>=1.23.0
 langdetect>=1.0.9
 pdfplumber>=0.10.2
 hunspell>=0.5.5
+python-bidi>=0.4.2  # For RTL text handling
+arabic-reshaper>=3.0.0  # For Arabic text rendering
