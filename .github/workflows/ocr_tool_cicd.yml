@@ -13,8 +13,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y hunspell hunspell-en-us libhunspell-dev
+          # Verify hunspell installation
+          hunspell -v
+          # Show installed library location
+          ldconfig -p | grep hunspell
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Lint and Test
         run: |
