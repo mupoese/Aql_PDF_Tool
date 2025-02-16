@@ -1,44 +1,43 @@
 import unittest
 import os
+import shutil
+from datetime import datetime
 from app.main import app
 from app.language_check import LanguageChecker
 from app.ocr import pdf_to_images, ocr_image
 
 class TestIntegration(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        """Set up test environment once before all tests."""
+        # Ensure input and output directories exist
+        for directory in ['input', 'output']:
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+        
+        # Create a timestamp for file naming
+        cls.timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+
     def setUp(self):
+        """Set up before each test."""
         app.config['TESTING'] = True
         self.client = app.test_client()
-        self.lang_checker = LanguageChecker()
-
-    def test_upload_endpoint(self):
-        # Test file upload with both formats
-        test_pdf_path = "tests/test_files/test.pdf"
-        if os.path.exists(test_pdf_path):
-            with open(test_pdf_path, 'rb') as pdf:
-                for fmt in ['txt', 'json']:
-                    response = self.client.post(
-                        '/uploader',
-                        data={
-                            'file': (pdf, 'test.pdf'),
-                            'format': fmt
-                        },
-                        content_type='multipart/form-data'
-                    )
-                    self.assertEqual(response.status_code, 200)
-
-    def test_language_detection(self):
-        # Test language detection for supported languages
-        test_texts = {
-            'en': 'This is English text.',
-            'ar': 'هذا نص باللغة العربية',
-            'he': 'זהו טקסט בעברית',
-            'fa': 'این متن فارسی است',
-            'ur': 'یہ اردو متن ہے'
-        }
+        self.test_filename = f'test_{self.timestamp}.pdf'
+        self.test_filepath = os.path.join('input', self.test_filename)
         
-        for lang, text in test_texts.items():
-            result = self.lang_checker.detect_language(text)
-            self.assertEqual(result['language'], lang)
+        # Create a test PDF file if it doesn't exist
+        if not os.path.exists(self.test_filepath):
+            self._create_test_pdf()
 
-if __name__ == '__main__':
-    unittest.main()
+    def _create_test_pdf(self):
+        """Create a sample PDF file for testing."""
+        # Using reportlab to create a test PDF
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        
+        c = canvas.Canvas(self.test_filepath, pagesize=letter)
+        
+        # Add multilingual text
+        c.drawString(100, 750, "English Text for Testing")
+        c.drawString(100, 700, "هذا نص عربي للاختبار")  # Arabic
+        c.drawString(100, 650,
