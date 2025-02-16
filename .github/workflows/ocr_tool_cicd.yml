@@ -48,26 +48,19 @@ jobs:
 
     - name: Set up build environment
       run: |
-        # Get Python include directories
+        # Get Python include directory
         PYTHON_INCLUDE=$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')
-        PYTHON_PLATINCLUDE=$(python -c 'import sysconfig; print(sysconfig.get_path("platinclude"))')
-        PYTHON_INTERNAL=$(python -c 'import os, sysconfig; print(os.path.join(os.path.dirname(sysconfig.get_path("include")), "internal"))')
-        
-        # Set environment variables
         echo "PYTHON_INCLUDE=$PYTHON_INCLUDE" >> $GITHUB_ENV
-        echo "CFLAGS=-I$PYTHON_INCLUDE -I$PYTHON_PLATINCLUDE -I$PYTHON_INTERNAL" >> $GITHUB_ENV
-        echo "CPPFLAGS=-I$PYTHON_INCLUDE -I$PYTHON_PLATINCLUDE -I$PYTHON_INTERNAL" >> $GITHUB_ENV
+        echo "CFLAGS=-I$PYTHON_INCLUDE" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$PYTHON_INCLUDE" >> $GITHUB_ENV
 
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        python -m pip install "cython>=3.0.0,<3.1.0"
+        python -m pip install cython==0.29.36  # Using an older, more stable version of Cython
         
-        # Create symlink for longintrepr.h
-        sudo ln -sf $(python -c 'import os, sysconfig; print(os.path.join(os.path.dirname(sysconfig.get_path("include")), "internal", "longintrepr.h"))') $(python -c 'import sysconfig; print(sysconfig.get_path("include"))')
-        
-        # Install cyhunspell with specific version and build flags
-        CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" python -m pip install --no-binary cyhunspell cyhunspell==1.3.4
+        # Try installing an older version of cyhunspell
+        python -m pip install cyhunspell==1.2.1
         
         python -m pip install -r requirements.txt
         python -m pip install pytest pytest-cov pylint black mypy
@@ -112,27 +105,17 @@ jobs:
 
     - name: Set up build environment
       run: |
-        # Get Python include directories
+        # Get Python include directory
         PYTHON_INCLUDE=$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')
-        PYTHON_PLATINCLUDE=$(python -c 'import sysconfig; print(sysconfig.get_path("platinclude"))')
-        PYTHON_INTERNAL=$(python -c 'import os, sysconfig; print(os.path.join(os.path.dirname(sysconfig.get_path("include")), "internal"))')
-        
-        # Set environment variables
         echo "PYTHON_INCLUDE=$PYTHON_INCLUDE" >> $GITHUB_ENV
-        echo "CFLAGS=-I$PYTHON_INCLUDE -I$PYTHON_PLATINCLUDE -I$PYTHON_INTERNAL" >> $GITHUB_ENV
-        echo "CPPFLAGS=-I$PYTHON_INCLUDE -I$PYTHON_PLATINCLUDE -I$PYTHON_INTERNAL" >> $GITHUB_ENV
+        echo "CFLAGS=-I$PYTHON_INCLUDE" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$PYTHON_INCLUDE" >> $GITHUB_ENV
 
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        python -m pip install "cython>=3.0.0,<3.1.0"
-        
-        # Create symlink for longintrepr.h
-        sudo ln -sf $(python -c 'import os, sysconfig; print(os.path.join(os.path.dirname(sysconfig.get_path("include")), "internal", "longintrepr.h"))') $(python -c 'import sysconfig; print(sysconfig.get_path("include"))')
-        
-        # Install cyhunspell with specific version and build flags
-        CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" python -m pip install --no-binary cyhunspell cyhunspell==1.3.4
-        
+        python -m pip install cython==0.29.36  # Using an older, more stable version of Cython
+        python -m pip install cyhunspell==1.2.1
         python -m pip install -r requirements.txt
 
     # ... rest of the security job remains the same ...
