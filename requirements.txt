@@ -1,5 +1,13 @@
 flask
+
 pytesseract
+
 pymupdf
+
 langdetect
+
 pdfplumber
+
+hunspell
+
+pyhunspell
