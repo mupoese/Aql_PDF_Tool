@@ -1,0 +1,17 @@
+# Snyk (https://snyk.io) policy file
+version: v1.25.0
+
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+  SNYK-PYTHON-PILLOW-2331901:
+    - '*':
+        reason: 'Requires manual review'
+        expires: 2025-03-16T00:00:00.000Z
+
+# patches apply the minimum changes required to fix a vulnerability
+patch: {}
+
+# configure language settings
+language-settings:
+  python: 
+    target-version: "3.11"
