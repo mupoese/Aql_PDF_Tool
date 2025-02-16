@@ -2,11 +2,13 @@ import os
 from flask import Flask, request, render_template, jsonify
 from app.ocr import pdf_to_images, ocr_image
 from app.utils import check_folders
+from app.language_check import LanguageChecker
 import json
 from datetime import datetime
 
 app = Flask(__name__)
 check_folders()
+lang_checker = LanguageChecker()
 
 @app.route('/')
 def upload_file():
@@ -33,6 +35,7 @@ def uploader():
     return jsonify({'error': 'No file uploaded or format not selected'}), 400
 
 def process_pdf(file_path: str, output_format: str) -> dict:
+    """Process PDF with language support and OCR."""
     images = pdf_to_images(file_path)
     pages_results = []
     
@@ -41,12 +44,12 @@ def process_pdf(file_path: str, output_format: str) -> dict:
         pages_results.append({
             'page_number': page_num,
             'text': ocr_result['text'],
-            'language': ocr_result['detected_language'],
-            'language_name': ocr_result['language_name']
+            'language_analysis': ocr_result.get('language_analysis', {})
         })
 
     base_name = os.path.splitext(os.path.basename(file_path))[0]
     
+    # Aggregate results
     output = {
         'input_file': file_path,
         'pages': pages_results,
@@ -54,17 +57,18 @@ def process_pdf(file_path: str, output_format: str) -> dict:
             'pages_processed': len(images),
             'tool': 'OCR PDF Tool',
             'timestamp': datetime.utcnow().isoformat(),
-            'formats_supported': ['txt', 'json']
+            'supported_languages': lang_checker.get_supported_languages()
         }
     }
 
-    # Save output in requested format
+    # Save in requested format
     if output_format == 'txt':
         output_path = os.path.join('output', f"{base_name}.txt")
         with open(output_path, 'w', encoding='utf-8') as f:
             for page in pages_results:
                 f.write(f"=== Page {page['page_number']} ===\n")
-                f.write(f"Language: {page['language_name']}\n\n")
+                if page['language_analysis']:
+                    f.write(f"Language: {page['language_analysis']['dominant_language']}\n\n")
                 f.write(page['text'])
                 f.write('\n\n')
     
