@@ -1,8 +1,9 @@
 import os
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, jsonify
 from app.ocr import pdf_to_images, ocr_image
 from app.utils import check_folders
 import json
+from datetime import datetime
 
 app = Flask(__name__)
 check_folders()
@@ -17,49 +18,64 @@ def uploader():
         file = request.files['file']
         output_format = request.form['format']
         
-        # Validate file extension
         if not file.filename.lower().endswith('.pdf'):
-            return 'Only PDF files are allowed.'
+            return jsonify({'error': 'Only PDF files are allowed'}), 400
             
         file_path = os.path.join('input', file.filename)
         file.save(file_path)
+        
         try:
-            process_pdf(file_path, output_format)
-            return f"File {file.filename} processed and saved as {output_format}."
+            result = process_pdf(file_path, output_format)
+            return jsonify(result)
         except Exception as e:
-            return f"Error processing file: {str(e)}"
-    return 'No file uploaded or format not selected.'
+            return jsonify({'error': str(e)}), 500
+            
+    return jsonify({'error': 'No file uploaded or format not selected'}), 400
 
-def process_pdf(file_path, output_format):
+def process_pdf(file_path: str, output_format: str) -> dict:
     images = pdf_to_images(file_path)
-    text_output = ""
-    for img in images:
-        text_output += ocr_image(img)
+    pages_results = []
+    
+    for page_num, img in enumerate(images, 1):
+        ocr_result = ocr_image(img)
+        pages_results.append({
+            'page_number': page_num,
+            'text': ocr_result['text'],
+            'language': ocr_result['detected_language'],
+            'language_name': ocr_result['language_name']
+        })
 
     base_name = os.path.splitext(os.path.basename(file_path))[0]
+    
+    output = {
+        'input_file': file_path,
+        'pages': pages_results,
+        'metadata': {
+            'pages_processed': len(images),
+            'tool': 'OCR PDF Tool',
+            'timestamp': datetime.utcnow().isoformat(),
+            'formats_supported': ['txt', 'json']
+        }
+    }
 
+    # Save output in requested format
     if output_format == 'txt':
         output_path = os.path.join('output', f"{base_name}.txt")
         with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(text_output)
-
+            for page in pages_results:
+                f.write(f"=== Page {page['page_number']} ===\n")
+                f.write(f"Language: {page['language_name']}\n\n")
+                f.write(page['text'])
+                f.write('\n\n')
+    
     elif output_format == 'json':
         output_path = os.path.join('output', f"{base_name}.json")
-        json_output = {
-            "input_file": file_path,
-            "output_text": text_output,
-            "metadata": {
-                "pages_processed": len(images),
-                "tool": "OCR PDF Tool",
-                "format": "JSON for LLM training",
-                "timestamp": os.environ.get('PROCESS_TIMESTAMP', '')
-            }
-        }
         with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(json_output, f, indent=4, ensure_ascii=False)
+            json.dump(output, f, indent=4, ensure_ascii=False)
+    
+    return output
 
 if __name__ == '__main__':
-    # For Docker deployment
     host = os.environ.get('FLASK_HOST', '0.0.0.0')
     port = int(os.environ.get('FLASK_PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
